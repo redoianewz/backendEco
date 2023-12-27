@@ -1,5 +1,5 @@
-const connectDB = require('../config/dbconnection');
-const db = connectDB(); 
+const pool = require('../config/dbconnection');
+const db = pool; 
 
 const getUsers = (req, res) => {
     // ... (your existing code)

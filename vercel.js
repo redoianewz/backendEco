@@ -1,10 +1,15 @@
 {
-    "rewrites": [
+    "version": 2,
+    "builds": [
       {
-        "source": "/api/:path*",
-        "destination": "https://myconnect-backend.vercel.app/api/:path*"
-        }
+        "src": "./index.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "/"
+      }
     ]
-
-    
 }
