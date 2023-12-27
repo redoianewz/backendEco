@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();    
 
-const{  getShoppingCart, addToShoppingCart,deleteShoppingCart }=require('../controllers/WishlistConteroller');
+const{  getwishlist, addTowishlist,deletewishlist }=require('../controllers/WishlistConteroller');
 
-router.route('/').post(addToShoppingCart).get(getShoppingCart);
-router.route('/:id').delete(deleteShoppingCart);
+router.route('/').post(addTowishlist).get(getwishlist);
+router.route('/:id').delete(deletewishlist);
 
 module.exports = router;

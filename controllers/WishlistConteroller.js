@@ -1,78 +1,72 @@
-const connectDB = require('../config/dbconnection');
-const db = connectDB();
+const pool = require('../config/dbconnection');
+const db = pool;
 
-const addToShoppingCart = (req, res) => {
-  const { userId, productId, quantity, price, productAttributes, ipMachine } = req.body;
-  const userIdentifier = userId || ipMachine || req.ip;
-  const constent = 'wishlist';
+const addTowishlist = async (req, res) => {
+  try {
+    const { userId, productId, quantity, price, productAttributes, ipMachine } = req.body;
+    const userIdentifier = userId || ipMachine || req.ip;
+    const constent = 'cart';
 
-  let responseSent = false; // Flag to track whether the response has been sent
+    let responseSent = false; // Flag to track whether the response has been sent
 
-  // Step 1: Check if a shopping cart already exists for the user or IP address
-  const checkCartSql = `
-    SELECT id
-    FROM wishlist
-    WHERE user_id = ? OR ip_machine = ?
-  `;
-  db.query(checkCartSql, [userId, req.ip], (checkCartErr, checkCartResult) => {
-    if (checkCartErr) {
-      throw checkCartErr;
-    }
+    // Step 1: Check if a shopping cart already exists for the user or IP address
+    const checkCartSql = `
+      SELECT id
+      FROM wishlist
+      WHERE user_id = ? OR ip_machine = ?
+    `;
+    const [checkCartResult] = await db.query(checkCartSql, [userId, req.ip]);
 
     if (checkCartResult.length > 0) {
       // A shopping cart already exists, use the existing cart ID
       const existingCartId = checkCartResult[0].id;
-      addToExistingCart(existingCartId);
+      await addToExistingCart(existingCartId);
     } else {
       // No existing shopping cart, create a new one
-      createNewCart();
+      await createNewCart();
     }
-  });
+  } catch (error) {
+    console.error('Error adding to shopping cart:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+    });
+  }
+};
 
-  // Function to add items to an existing shopping cart
-  const addToExistingCart = (cartId) => {
+const addToExistingCart = async (cartId) => {
+  try {
     if (!responseSent) {
       const insertCartItemSql = `
-        INSERT INTO wishlistItem (wishlist_id, product_id, quantity, price)
+        INSERT INTO wishlistitem (wishlist_id, product_id, quantity, price)
         VALUES (?, ?, ?, ?)
       `;
-      db.query(
-        insertCartItemSql,
-        [cartId, productId, quantity, price],
-        (itemErr, itemResult) => {
-          if (itemErr) {
-            throw itemErr;
-          }
+      const [itemResult] = await db.query(insertCartItemSql, [cartId, productId, quantity, price]);
 
-          // Step 5: Insert product attributes into shoppingcartItemAttributes table
-          if (productAttributes && productAttributes.length > 0) {
-            const insertAttributesSql = `
-              INSERT INTO wishlistItemAttributes (wishlist_item_id, product_attribute, attribute_value)
-              VALUES (?, ?, ?)
-            `;
+      // Step 5: Insert product attributes into wishlistitemattributes table
+      if (productAttributes && productAttributes.length > 0) {
+        const insertAttributesSql = `
+          INSERT INTO wishlistitemattributes (wishlist_item_id, product_attribute, attribute_value)
+          VALUES (?, ?, ?)
+        `;
 
-            productAttributes.forEach((attribute) => {
-              db.query(
-                insertAttributesSql,
-                [itemResult.insertId, attribute.attributeId, attribute.attributeValue],
-                (attributeErr, attributeResult) => {
-                  if (attributeErr) {
-                    throw attributeErr;
-                  }
-                }
-              );
-            });
-          }
-
-          res.send('Product added to existing shopping cart');
-          responseSent = true; // Set the flag to true after sending the response
+        for (const attribute of productAttributes) {
+          await db.query(insertAttributesSql, [itemResult.insertId, attribute.attributeId, attribute.attributeValue]);
         }
-      );
-    }
-  };
+      }
 
-  // Function to create a new shopping cart
-  const createNewCart = () => {
+      res.send('Product added to existing shopping cart');
+      responseSent = true; // Set the flag to true after sending the response
+    }
+  } catch (error) {
+    console.error('Error adding to existing cart:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+    });
+  }
+};
+
+const createNewCart = async () => {
+  try {
     if (!responseSent) {
       if (ipMachine || userId) {
         // Either ip_machine or user_id is present, don't create a new cart
@@ -83,147 +77,147 @@ const addToShoppingCart = (req, res) => {
           INSERT INTO wishlist (user_id, ip_machine, constent)
           VALUES (?, ?, ?)
         `;
-        db.query(insertCartSql, [userId, req.ip, constent], (cartErr, cartResult) => {
-          if (cartErr) {
-            throw cartErr;
-          }
+        const [cartResult] = await db.query(insertCartSql, [userId, req.ip, constent]);
 
-          // Step 3: Get the ID of the inserted shopping cart
-          const cartId = cartResult.insertId;
+        // Step 3: Get the ID of the inserted shopping cart
+        const cartId = cartResult.insertId;
 
-          // Step 4: Insert into shoppingcartItem table
-          const insertCartItemSql = `
-            INSERT INTO wishlistItem (wishlist_id, product_id, quantity, price)
-            VALUES (?, ?, ?, ?)
+        // Step 4: Insert into wishlistitem table
+        const insertCartItemSql = `
+          INSERT INTO wishlistitem (wishlist_id, product_id, quantity, price)
+          VALUES (?, ?, ?, ?)
+        `;
+        const [itemResult] = await db.query(insertCartItemSql, [cartId, productId, quantity, price]);
+
+        // Step 5: Insert product attributes into wishlistitemattributes table
+        if (productAttributes && productAttributes.length > 0) {
+          const insertAttributesSql = `
+            INSERT INTO wishlistitemattributes (wishlist_item_id, product_attribute, attribute_value)
+            VALUES (?, ?, ?)
           `;
-          db.query(
-            insertCartItemSql,
-            [cartId, productId, quantity, price],
-            (itemErr, itemResult) => {
-              if (itemErr) {
-                throw itemErr;
-              }
 
-              // Step 5: Insert product attributes into shoppingcartItemAttributes table
-              if (productAttributes && productAttributes.length > 0) {
-                const insertAttributesSql = `
-                  INSERT INTO wishlistItemAttributes (wishlist_item_id, product_attribute, attribute_value)
-                  VALUES (?, ?, ?)
-                `;
+          for (const attribute of productAttributes) {
+            await db.query(insertAttributesSql, [itemResult.insertId, attribute.attributeId, attribute.attributeValue]);
+          }
+        }
 
-                productAttributes.forEach((attribute) => {
-                  db.query(
-                    insertAttributesSql,
-                    [itemResult.insertId, attribute.attributeId, attribute.attributeValue],
-                    (attributeErr, attributeResult) => {
-                      if (attributeErr) {
-                        throw attributeErr;
-                      }
-                    }
-                  );
-                });
-              }
-
-              res.send('Product added to new shopping cart');
-              responseSent = true; // Set the flag to true after sending the response
-            }
-          );
-        });
+        res.send('Product added to new shopping cart');
+        responseSent = true; // Set the flag to true after sending the response
       }
     }
-  };
+  } catch (error) {
+    console.error('Error creating new cart:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+    });
+  }
 };
 
-const getShoppingCart = (req, res) => {
-  db.query(
-    `
-    SELECT 
-      wishlist.id AS wishlist_id, wishlist.user_id, wishlist.Ip_machine, wishlist.constent,
-      wishlistItem.id AS item_id, wishlistItem.wishlist_id, wishlistItem.product_id, wishlistItem.quantity, wishlistItem.price,
-      wishlistItemAttributes.id AS attribute_id, wishlistItemAttributes.wishlist_item_id, wishlistItemAttributes.product_attribute, wishlistItemAttributes.attribute_value,
-      products.id AS product_id, products.name as name, products.regular_price as regular_price, products.sale_price, products.image as image
-    FROM 
-      wishlist
-    LEFT JOIN 
-      wishlistItem ON wishlist.id = wishlistItem.wishlist_id
-    LEFT JOIN 
-      wishlistItemAttributes ON wishlistItem.id = wishlistItemAttributes.wishlist_item_id
-    LEFT JOIN 
-      products ON wishlistItem.product_id = products.id
-    WHERE 
-      wishlist.user_id = ? OR wishlist.Ip_machine = ?;
-  `,
-    [req.body.userId, req.ip],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-      } else {
-        const organizedData = {};
+// update quantity product in wishlistitem
 
-        result.forEach((cartItem) => {
-          const { cart_id, user_id, Ip_machine, constent, item_id, product_id,name ,regular_price,image, quantity, price, attribute_id, product_attribute, attribute_value, ...productInfo } = cartItem;
+const getwishlist = async (req, res) => {
+  try {
+    const [result] = await db.query(`
+      SELECT 
+        wishlist.id AS wishlist_id, wishlist.user_id, wishlist.Ip_machine, wishlist.constent,
+        wishlistitem.id AS item_id, wishlistitem.wishlist_id, wishlistitem.product_id, wishlistitem.quantity, wishlistitem.price,
+        wishlistitemattributes.id AS attribute_id, wishlistitemattributes.wishlist_item_id, wishlistitemattributes.product_attribute, wishlistitemattributes.attribute_value,
+        products.id AS product_id, products.name as name, products.regular_price as regular_price, products.sale_price, products.image as image
+      FROM 
+        wishlist
+      LEFT JOIN 
+        wishlistitem ON wishlist.id = wishlistitem.wishlist_id
+      LEFT JOIN 
+        wishlistitemattributes ON wishlistitem.id = wishlistitemattributes.wishlist_item_id
+      LEFT JOIN 
+        products ON wishlistitem.product_id = products.id
+      WHERE 
+        wishlist.user_id = ? OR wishlist.Ip_machine = ?;
+    `, [req.body.userId, req.ip]);
 
-          if (!organizedData[cart_id]) {
-            organizedData[cart_id] = { cart_id, user_id, Ip_machine, constent, items: [] };
-          }
+    const organizedData = {};
 
-          if (!organizedData[cart_id].items[item_id]) {
-            organizedData[cart_id].items[item_id] = { item_id, product_id, quantity,name,regular_price,image, price, attributes: {} };
-          }
+    result.forEach((cartItem) => {
+      const { wishlist_id, user_id, Ip_machine, constent, item_id, product_id, name, regular_price, image, quantity, price, attribute_id, product_attribute, attribute_value, ...productInfo } = cartItem;
 
-          if (attribute_id && product_attribute && attribute_value) {
-            if (!organizedData[cart_id].items[item_id].attributes[product_attribute]) {
-              organizedData[cart_id].items[item_id].attributes[product_attribute] = [];
-            }
+      if (!organizedData[wishlist_id]) {
+        organizedData[wishlist_id] = { wishlist_id, user_id, Ip_machine, constent, items: [] };
+      }
 
-            organizedData[cart_id].items[item_id].attributes[product_attribute].push(attribute_value);
-          }
-        });
+      if (!organizedData[wishlist_id].items[item_id]) {
+        organizedData[wishlist_id].items[item_id] = { item_id, product_id, quantity, name, regular_price, image, price, attributes: {} };
+      }
 
-        const finalResult = Object.values(organizedData).map(({ items, ...cartInfo }) => {
+      if (attribute_id && product_attribute && attribute_value) {
+        if (!organizedData[wishlist_id].items[item_id].attributes[product_attribute]) {
+          organizedData[wishlist_id].items[item_id].attributes[product_attribute] = [];
+        }
+
+        organizedData[wishlist_id].items[item_id].attributes[product_attribute].push(attribute_value);
+      }
+    });
+
+    const finalResult = Object.values(organizedData).map(({ items, ...cartInfo }) => {
+      return {
+        ...cartInfo,
+        items: Object.values(items).map(({ attributes, ...itemInfo }) => {
           return {
-            ...cartInfo,
-            items: Object.values(items).map(({ attributes, ...itemInfo }) => {
-              return {
-                ...itemInfo,
-                attributes: Object.entries(attributes).map(([name, values]) => ({
-                  name,
-                  values,
-                })),
-              };
-            }),
+            ...itemInfo,
+            attributes: Object.entries(attributes).map(([name, values]) => ({
+              name,
+              values,
+            })),
           };
-        });
+        }),
+      };
+    });
 
-        res.json(finalResult);
-      }
-    }
-  );
+    res.send(finalResult);
+  } catch (error) {
+    console.error('Error getting shopping cart:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+    });
+  }
 };
 
+const updateQuantityInwishlist = async (req, res) => {
+  try {
+    const { userId, itemId, quantity } = req.body;
 
-const deleteShoppingCart = (req, res) => {
-  const idshopcartItem=req.params.id;
-  const { userId } = req.body;
-  const userIdentifier = userId || req.ip;
+    const updateQuantitySql = `
+      UPDATE wishlistitem
+      SET quantity = ?
+      WHERE id = ? AND wishlist_id IN (SELECT id FROM wishlist WHERE user_id = ? OR ip_machine = ?)
+    `;
 
-  const deleteProductSql = `
-    DELETE FROM wishlistItem
-    WHERE id = ? AND wishlist_id IN (SELECT id FROM wishlist WHERE user_id = ? OR ip_machine = ?)
-  `;
+    const [result] = await db.query(updateQuantitySql, [quantity, itemId, userId, req.ip]);
 
-  db.query(deleteProductSql, [idshopcartItem, userId, req.ip], (err, result) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send("Error deleting product from cart");
-    } else {
-      res.send("Product deleted from cart successfully");
-    }
-  });
+    res.send("Quantity updated successfully");
+  } catch (error) {
+    console.error('Error updating quantity in shopping cart:', error);
+    res.status(500).send("Error updating quantity in the shopping cart");
+  }
 };
 
+const deletewishlist = async (req, res) => {
+  try {
+    const idshopcartItem = req.params.id;
+    const { userId } = req.body;
+    const userIdentifier = userId || req.ip;
 
+    const deleteProductSql = `
+      DELETE FROM wishlistitem
+      WHERE id = ? AND wishlist_id IN (SELECT id FROM wishlist WHERE user_id = ? OR ip_machine = ?)
+    `;
 
+    const [result] = await db.query(deleteProductSql, [idshopcartItem, userId, req.ip]);
 
+    res.send("Product deleted from cart successfully");
+  } catch (error) {
+    console.error('Error deleting product from cart:', error);
+    res.status(500).send("Error deleting product from cart");
+  }
+};
 
-module.exports = { addToShoppingCart,getShoppingCart,deleteShoppingCart };
+module.exports = { addTowishlist, getwishlist, deletewishlist, updateQuantityInwishlist };
