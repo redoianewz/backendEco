@@ -161,8 +161,9 @@ const createNewCart = async (productId, quantity, price, productAttributes, res,
 
 const getShoppingCart = async (req, res) => {
   try {
+   
         const ipAddress = getIpAddress();
-
+        console.log("IP Address:", ipAddress);
     const [result] = await db.query(
       `
       SELECT 
