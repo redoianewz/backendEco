@@ -3,6 +3,9 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const os = require('os');
+ const dotenv = require('dotenv');
+
+dotenv.config();
 
 
 // Call the connectDB function to set up the database connection
@@ -27,7 +30,6 @@ app.use('/api/wishlist',require('./Routes/wishlistRoute'));
 app.use('/api/search', require('./Routes/SearchRoute'));
 app.use('/api/shoppingCart', require('./Routes/ShopingCartRoute'));
 app.use('/api/checkout', require('./Routes/Checkout'));
-//my ip address
 const ipAddress = getIpAddress();
 console.log('Server IP address:', ipAddress);
 

@@ -96,7 +96,7 @@ const getOrders = async (req, res) => {
             orders: orders,
         };
 
-        res.send(response);
+        res.send([response]);
     } catch (error) {
         console.error('Error retrieving orders:', error);
         res.status(500).send('Internal Server Error: ' + error.message);
