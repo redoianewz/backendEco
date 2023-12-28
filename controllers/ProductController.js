@@ -5,6 +5,7 @@ const getProducts = async (req, res) => {
     try {
         const [result] = await db.query('SELECT products.*, categories.name as category_name FROM products INNER JOIN categories ON products.category_id = categories.id');
         res.send(result);
+        console.log(result);
     } catch (error) {
         console.error('Error retrieving products:', error);
         res.status(500).send('Internal Server Error: ' + error.message);
