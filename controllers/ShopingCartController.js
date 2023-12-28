@@ -259,6 +259,9 @@ const getShoppingCart = async (req, res) => {
         };
       }
     );
+    console.log("Result:", result);
+    console.log("Final result:", finalResult);
+    
 
     res.send(finalResult);
   } catch (error) {
