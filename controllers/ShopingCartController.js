@@ -161,6 +161,8 @@ const createNewCart = async (productId, quantity, price, productAttributes, res,
 
 const getShoppingCart = async (req, res) => {
   try {
+        const ipAddress = getIpAddress();
+
     const [result] = await db.query(
       `
       SELECT 
@@ -179,7 +181,7 @@ const getShoppingCart = async (req, res) => {
       WHERE 
          shoppingcart.Ip_machine = ?  
     `,
-      [getIpAddress()]
+      [ipAddress]
     );
 
     const organizedData = {};
