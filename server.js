@@ -34,6 +34,7 @@ app.use('/api/checkout', require('./Routes/Checkout'));
 
 app.use("/api/ip", async (req, res) => {
   const ip =
+    req.ip ||
     req.headers["x-real-ip"] ||
     req.headers["x-forwarded-for"] ||
     req.headers["cf-connecting-ip"] ||
