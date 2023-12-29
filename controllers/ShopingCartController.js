@@ -29,7 +29,6 @@ const addToShoppingCart = async (req, res) => {
     let cartId;
 
     if (existingCartResult.length > 0) {
-      // If a cart already exists, use its ID
       cartId = existingCartResult[0].id;
     } else {
       // If no cart exists, create a new one
@@ -82,6 +81,7 @@ const addToShoppingCart = async (req, res) => {
 };
 
 const getShoppingCart = async (req, res) => {
+  console.log("User ID:", req.session);
   try {
     // Ensure userId is set
     ensureUserId(req);
