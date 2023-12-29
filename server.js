@@ -39,19 +39,15 @@ app.use('/api/checkout', require('./Routes/Checkout'));
 app.use("/api/ip", async (req, res) => {
   // Retrieve the user's IP address
   const ip =
-    req.headers["x-real-ip"] ||
     req.headers["x-forwarded-for"] ||
-    req.headers["cf-connecting-ip"] ||
     req.socket.remoteAddress ||
     "";
-
-  // Check if the user has a session, if not, create one
   if (!req.session.ip) {
     req.session.ip = ip;
   }
 
   // Send the user's specific IP address
-  res.send(req.session.ip);
+  res.send("Your IP address is: " + req.session.ip);
 });;
 
 
