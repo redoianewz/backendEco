@@ -1,5 +1,6 @@
 //server.js
 const express = require('express');
+const session = require("express-session");
 const path = require('path');
 const cors = require('cors');
 const os = require('os');
@@ -9,15 +10,19 @@ const os = require('os');
 dotenv.config();
 
 
-// Call the connectDB function to set up the database connection
-
-
 const app = express();
 const port = process.env.PORT || 5001;
 app.use(express.json());
 app.use(cors());
 
 app.use(express.urlencoded({extended: false}))
+app.use(
+  session({
+    secret: "your-secret-key",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 // const upload= multer({storage:storage});
 
@@ -31,18 +36,23 @@ app.use('/api/wishlist',require('./Routes/wishlistRoute'));
 app.use('/api/search', require('./Routes/SearchRoute'));
 app.use('/api/shoppingCart', require('./Routes/ShopingCartRoute'));
 app.use('/api/checkout', require('./Routes/Checkout'));
-
 app.use("/api/ip", async (req, res) => {
+  // Retrieve the user's IP address
   const ip =
-    req.ip ||
     req.headers["x-real-ip"] ||
     req.headers["x-forwarded-for"] ||
     req.headers["cf-connecting-ip"] ||
     req.socket.remoteAddress ||
     "";
 
-  res.send(ip);
-});
+  // Check if the user has a session, if not, create one
+  if (!req.session.ip) {
+    req.session.ip = ip;
+  }
+
+  // Send the user's specific IP address
+  res.send(req.session.ip);
+});;
 
 
 app.listen(port, () => {
