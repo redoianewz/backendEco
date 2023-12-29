@@ -4,6 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const os = require('os');
  const dotenv = require('dotenv');
+ const uuid = require("uuid");
 
 dotenv.config();
 
@@ -30,8 +31,18 @@ app.use('/api/wishlist',require('./Routes/wishlistRoute'));
 app.use('/api/search', require('./Routes/SearchRoute'));
 app.use('/api/shoppingCart', require('./Routes/ShopingCartRoute'));
 app.use('/api/checkout', require('./Routes/Checkout'));
-const ipAddress = getIpAddress();
-console.log('Server IP address:', ipAddress);
+
+app.use("/api/ip", async (req, res) => {
+  const ip =
+    req.headers["x-real-ip"] ||
+    req.headers["x-forwarded-for"] ||
+    req.headers["cf-connecting-ip"] ||
+    req.socket.remoteAddress ||
+    "";
+
+  res.send(ip);
+});
+
 
 app.listen(port, () => {
     console.log(`Server running at port ${port}`);
