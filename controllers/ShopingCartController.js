@@ -1,129 +1,30 @@
+const e = require("express");
 const pool = require("../config/dbconnection");
 const db = pool;
+const session = require("express-session");
 const uuid = require("uuid");
-const os = require("os");
-const ipAddress = getIpAddress();
-console.log("Server IP address:", ipAddress);
+const { v4: uuidv4 } = require("uuid");
 
-function getIpAddress() {
-  const networkInterfaces = os.networkInterfaces();
-  let ipAddress;
-
-  // Iterate over network interfaces
-  Object.keys(networkInterfaces).forEach((key) => {
-    const iface = networkInterfaces[key];
-
-    iface.forEach((entry) => {
-      // Look for IPv4 addresses (ignore IPv6)
-      if (!entry.internal && entry.family === "IPv4") {
-        ipAddress = entry.address;
-      }
-    });
-  });
-
-  return ipAddress;
-}
-
-
-// const addToShoppingCart = async (req, res) => {
-//   try {
-//     const { productId, quantity, price, productAttributes } = req.body;
-//     const ipAddress = uuid.v4();
-    
-//     let responseSent = false; // Initialize local responseSent flag
-
-//     // Step 1: Check if a shopping cart already exists for the user or IP address
-//     const checkCartSql = `
-//       SELECT id
-//       FROM shoppingcart
-//       WHERE Ip_machine = ?;
-//     `;
-//     const [checkCartResult] = await db.query(checkCartSql, [ipAddress]);
-
-//     if (checkCartResult.length > 0) {
-//       // A shopping cart already exists, use the existing cart ID
-//       const existingCartId = checkCartResult[0].id;
-//       await addToExistingCart(existingCartId, productId, quantity, price, productAttributes, res, responseSent);
-//     } else {
-//       // No existing shopping cart, create a new one
-//       await createNewCart(productId, quantity, price, productAttributes, res, responseSent);
-//     }
-//   } catch (error) {
-//     console.error("Error adding to shopping cart:", error);
-//     res.status(500).json({
-//       error: "Internal Server Error",
-//     });
-//   }
-// };
-
-// const addToShoppingCart= async (req, res) => {
-//     try {
-//         const {  constent } = req.body;
-//         const cartIdentifier = uuid.v4();
-//         const [result] = await db.query(
-//           "INSERT INTO shoppingcart(Ip_machine, constent) VALUES(?, ?)",
-//           [cartIdentifier, constent]
-//         );
-//         res.json(result);
-//     } catch (error) {
-//         console.error('Error inserting shoppingcart:', error);
-//         res.status(500).send('Internal Server Error: ' + error.message);
-//     }
-// };
-// const addToExistingCart = async (cartId, productId, quantity, price, productAttributes, res, responseSent) => {
-//   try {
-//     if (!responseSent) {
-//       const insertCartItemSql = `
-//         INSERT INTO shoppingcartitem (cart_id, product_id, quantity, price)
-//         VALUES (?, ?, ?, ?)
-//       `;
-//       const [itemResult] = await db.query(insertCartItemSql, [
-//         cartId,
-//         productId,
-//         quantity,
-//         price,
-//       ]);
-
-//       // Step 5: Insert product attributes into shoppingcartitemattributes table
-//       if (productAttributes && productAttributes.length > 0) {
-//         const insertAttributesSql = `
-//           INSERT INTO shoppingcartitemattributes (cart_item_id, product_attribute, attribute_value)
-//           VALUES (?, ?, ?)
-//         `;
-
-//         for (const attribute of productAttributes) {
-//           await db.query(insertAttributesSql, [
-//             itemResult.insertId,
-//             attribute.attributeId,
-//             attribute.attributeValue,
-//           ]);
-//         }
-//       }
-
-//       res.send("Product added to existing shopping cart1");
-//     }
-//   } catch (error) {
-//     console.error("Error adding to existing cart:", error);
-//     res.status(500).json({
-//       error: "Internal Server Error",
-//     });
-//   }
-// };
+// Ensure userId is set in the session
+const ensureUserId = (req) => {
+  if (!req.session.userId) {
+    req.session.userId = uuidv4();
+  }
+};
 
 const addToShoppingCart = async (req, res) => {
   try {
     const { productId, quantity, price, productAttributes } = req.body;
 
-    // Step 1: Get the IP address
-    const ipAddress = uuid.v4();
-    console.log("IP Address:", ipAddress);
-    const iptest=req.ip;
-    console.log("IP Address:", iptest);
-    // Step 2: Check if a cart already exists for the IP address
+    // Ensure userId is set
+    ensureUserId(req);
+
     const existingCartSql = `
       SELECT id FROM shoppingcart WHERE ip_machine = ? LIMIT 1
     `;
-    const [existingCartResult] = await db.query(existingCartSql, [ipAddress]);
+    const [existingCartResult] = await db.query(existingCartSql, [
+      req.session.userId,
+    ]);
 
     let cartId;
 
@@ -136,7 +37,10 @@ const addToShoppingCart = async (req, res) => {
         INSERT INTO shoppingcart (ip_machine, constent)
         VALUES (?, ?)
       `;
-      const [cartResult] = await db.query(insertCartSql, [ipAddress, "cart"]);
+      const [cartResult] = await db.query(insertCartSql, [
+        req.session.userId,
+        "cart",
+      ]);
       cartId = cartResult.insertId;
     }
 
@@ -177,14 +81,11 @@ const addToShoppingCart = async (req, res) => {
   }
 };
 
-
-// update quantity product in shoppingcartitem
-
 const getShoppingCart = async (req, res) => {
   try {
-   
-        const ipAddress = uuid.v4();
-        console.log("IP Address:", ipAddress);
+    // Ensure userId is set
+    ensureUserId(req);
+
     const [result] = await db.query(
       `
       SELECT 
@@ -203,7 +104,7 @@ const getShoppingCart = async (req, res) => {
       WHERE 
          shoppingcart.Ip_machine = ?  
     `,
-      [ipAddress]
+      [req.session.userId]
     );
 
     const organizedData = {};
@@ -282,7 +183,7 @@ const getShoppingCart = async (req, res) => {
     );
     console.log("Result:", result);
     console.log("Final result:", finalResult);
-
+    console.log("User ID:", req.session.userId);
 
     res.send(finalResult);
   } catch (error) {
@@ -296,6 +197,7 @@ const getShoppingCart = async (req, res) => {
 const updateQuantityInShoppingCart = async (req, res) => {
   try {
     const { userId, itemId, quantity } = req.body;
+    ensureUserId(req);
 
     const updateQuantitySql = `
       UPDATE shoppingcartitem
@@ -307,7 +209,7 @@ const updateQuantityInShoppingCart = async (req, res) => {
       quantity,
       itemId,
       userId,
-      req.ip,
+      req.session.userId,
     ]);
 
     res.send("Quantity updated successfully");
@@ -321,7 +223,7 @@ const deleteShoppingCart = async (req, res) => {
   try {
     const idshopcartItem = req.params.id;
     const { userId } = req.body;
-    const userIdentifier = userId || req.ip;
+    ensureUserId(req);
 
     const deleteProductSql = `
       DELETE FROM shoppingcartitem
@@ -331,7 +233,7 @@ const deleteShoppingCart = async (req, res) => {
     const [result] = await db.query(deleteProductSql, [
       idshopcartItem,
       userId,
-      req.ip,
+      req.session.userId,
     ]);
 
     res.send("Product deleted from cart successfully");
@@ -346,5 +248,4 @@ module.exports = {
   getShoppingCart,
   deleteShoppingCart,
   updateQuantityInShoppingCart,
-  getIpAddress,
 };

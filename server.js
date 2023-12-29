@@ -8,12 +8,11 @@ const { v4: uuidv4 } = require("uuid");
 dotenv.config();
 
 
+
 const app = express();
 const port = process.env.PORT || 5001;
 app.use(express.json());
 app.use(cors());
-
-app.use(express.urlencoded({extended: false}))
 app.use(
   session({
     secret: "your-secret-key",
@@ -21,6 +20,8 @@ app.use(
     saveUninitialized: true,
   })
 );
+app.use(express.urlencoded({extended: false}))
+
 
 // const upload= multer({storage:storage});
 
@@ -34,13 +35,9 @@ app.use('/api/wishlist',require('./Routes/wishlistRoute'));
 app.use('/api/search', require('./Routes/SearchRoute'));
 app.use('/api/shoppingCart', require('./Routes/ShopingCartRoute'));
 app.use('/api/checkout', require('./Routes/Checkout'));
-app.use("/api/ip", async (req, res) => {
-  if (!req.session.userId) {
-    req.session.userId = uuidv4();
-  }
-  res.send("this is your ip address" + req.session.userId);
-});
+
 
 app.listen(port, () => {
     console.log(`Server running at port ${port}`);
 });
+module.exports = app;
