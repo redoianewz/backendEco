@@ -3,10 +3,8 @@ const express = require('express');
 const session = require("express-session");
 const path = require('path');
 const cors = require('cors');
-const os = require('os');
  const dotenv = require('dotenv');
- const uuid = require("uuid");
-
+const { v4: uuidv4 } = require("uuid");
 dotenv.config();
 
 
@@ -37,38 +35,12 @@ app.use('/api/search', require('./Routes/SearchRoute'));
 app.use('/api/shoppingCart', require('./Routes/ShopingCartRoute'));
 app.use('/api/checkout', require('./Routes/Checkout'));
 app.use("/api/ip", async (req, res) => {
-  // Retrieve the user's IP address
-  const ip =
-    req.headers["x-forwarded-for"] ||
-    req.socket.remoteAddress ||
-    "";
-  if (!req.session.ip) {
-    req.session.ip = ip;
+  if (!req.session.userId) {
+    req.session.userId = uuidv4();
   }
-
-  // Send the user's specific IP address
-  res.send("Your IP address is: " + req.session.ip);
-});;
-
+  res.send("this is your ip address" + req.session.userId);
+});
 
 app.listen(port, () => {
     console.log(`Server running at port ${port}`);
 });
-function getIpAddress() {
-    const networkInterfaces = os.networkInterfaces();
-    let ipAddress;
-
-    // Iterate over network interfaces
-    Object.keys(networkInterfaces).forEach((key) => {
-        const iface = networkInterfaces[key];
-
-        iface.forEach((entry) => {
-            // Look for IPv4 addresses (ignore IPv6)
-            if (!entry.internal && entry.family === 'IPv4') {
-                ipAddress = entry.address;
-            }
-        });
-    });
-
-    return ipAddress;
-}
