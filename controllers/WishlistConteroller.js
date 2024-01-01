@@ -163,8 +163,6 @@ const getwishlist = async (req, res) => {
     );
     console.log("Result:", result);
     console.log("Final result:", finalResult);
-    console.log("User ID:", req.session.userId);
-
     res.send(finalResult);
   } catch (error) {
     console.error("Error getting shopping cart:", error);

@@ -161,9 +161,7 @@ const getShoppingCart = async (req, res) => {
       }
     );
     console.log("Result:", result);
-    console.log("Final result:", finalResult);
-    console.log("User ID:", req.session.userId);
-
+    console.log("Final result:", finalResult);    
     res.send(finalResult);
   } catch (error) {
     console.error("Error getting shopping cart:", error);
