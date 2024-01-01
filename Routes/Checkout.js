@@ -7,9 +7,7 @@ const {createOrder,
     getOrder,
     }=require('../controllers/CheckoutController');
 
-router.route('/').post(createOrder);
-
-router.route('/:id').get(getOrders);
+router.route('/:id').get(getOrders).post(createOrder);
 router.route('/:userId/:orderId').get(getOrder);
 
 module.exports=router;

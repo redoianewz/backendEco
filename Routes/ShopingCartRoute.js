@@ -1,3 +1,4 @@
+// Desc: ShopingCart Route
 const express = require('express');
 const router = express.Router();    
 
@@ -8,6 +9,7 @@ const {
   updateQuantityInShoppingCart,
 } = require("../controllers/ShopingCartController");
 
-router.route('/').post(addToShoppingCart).get(getShoppingCart).put(updateQuantityInShoppingCart)
-router.route('/:id').delete(deleteShoppingCart);
+router.route('/').post(addToShoppingCart)
+router.route('/:id').get(getShoppingCart);
+router.route('/:id/:userId').delete(deleteShoppingCart).put(updateQuantityInShoppingCart);
 module.exports = router;

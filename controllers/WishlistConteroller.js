@@ -1,35 +1,30 @@
-const e = require("express");
+// Desc: Controller for shopping cart
 const pool = require("../config/dbconnection");
 const db = pool;
-const session = require("express-session");
-const uuid = require("uuid");
 const { v4: uuidv4 } = require("uuid");
 
 // Ensure userId is set in the session
+// Ensure userId and ip_machine are set in the session
 const ensureUserId = (req) => {
   if (!req.session.userId) {
-    req.session.userId = uuidv4();
+    req.session.userId = uuidv4(); // Use the IP address from the request
   }
+  return req.session.userId;
 };
 
 const addTowishlist = async (req, res) => {
   try {
-    const { productId, quantity, price, productAttributes } = req.body;
+    const { productId, quantity, price, productAttributes, uuid } = req.body;
 
-    // Ensure userId is set
-    ensureUserId(req);
-
+    // Ensure uuid i set
     const existingCartSql = `
       SELECT id FROM wishlist WHERE ip_machine = ? LIMIT 1
     `;
-    const [existingCartResult] = await db.query(existingCartSql, [
-      req.session.userId,
-    ]);
+    const [existingCartResult] = await db.query(existingCartSql, [uuid]);
 
     let cartId;
 
     if (existingCartResult.length > 0) {
-      // If a cart already exists, use its ID
       cartId = existingCartResult[0].id;
     } else {
       // If no cart exists, create a new one
@@ -37,10 +32,7 @@ const addTowishlist = async (req, res) => {
         INSERT INTO wishlist (ip_machine, constent)
         VALUES (?, ?)
       `;
-      const [cartResult] = await db.query(insertCartSql, [
-        req.session.userId,
-        "wishlist",
-      ]);
+      const [cartResult] = await db.query(insertCartSql, [uuid, "cart"]);
       cartId = cartResult.insertId;
     }
 
@@ -83,9 +75,7 @@ const addTowishlist = async (req, res) => {
 
 const getwishlist = async (req, res) => {
   try {
-    // Ensure userId is set
-    ensureUserId(req);
-
+    const idcart = req.params.id;
     const [result] = await db.query(
       `
       SELECT 
@@ -104,7 +94,7 @@ const getwishlist = async (req, res) => {
       WHERE 
          wishlist.Ip_machine = ?  
     `,
-      [req.session.userId]
+      [idcart]
     );
 
     const organizedData = {};
@@ -194,22 +184,47 @@ const getwishlist = async (req, res) => {
   }
 };
 
+const updateQuantityInwishlist = async (req, res) => {
+  try {
+    const { itemId, quantity } = req.body;
+    const userId = "8f6d2a05-a5f8-41dc-b6e5-071cb22cc3bb";
+
+    console.log("itemId:", itemId);
+    console.log("quantity:", quantity);
+    console.log("userId:", userId);
+
+    const updateQuantitySql = `
+      UPDATE wishlistitem
+      SET quantity = ?
+      WHERE id = ? AND wishlist_id IN (SELECT id FROM wishlist WHERE ip_machine = ?)
+    `;
+
+    const [result] = await db.query(updateQuantitySql, [
+      quantity,
+      itemId,
+      userId,
+    ]);
+
+    console.log("Result:", result); // Log the result to check if the update was successful
+
+    res.send("Quantity updated successfully");
+  } catch (error) {
+    console.error("Error updating quantity in shopping cart:", error);
+    res.status(500).send("Error updating quantity in the shopping cart");
+  }
+};
+
 const deletewishlist = async (req, res) => {
   try {
     const idshopcartItem = req.params.id;
-    const { userId } = req.body;
-    ensureUserId(req);
+    const userId = req.params.userId;
 
     const deleteProductSql = `
       DELETE FROM wishlistitem
-      WHERE id = ? AND wishlist_id IN (SELECT id FROM wishlist WHERE user_id = ? OR ip_machine = ?)
+      WHERE id = ? AND wishlist_id IN (SELECT id FROM wishlist WHERE ip_machine = ?)
     `;
 
-    const [result] = await db.query(deleteProductSql, [
-      idshopcartItem,
-      userId,
-      req.session.userId,
-    ]);
+    const [result] = await db.query(deleteProductSql, [idshopcartItem, userId]);
 
     res.send("Product deleted from cart successfully");
   } catch (error) {
@@ -219,7 +234,8 @@ const deletewishlist = async (req, res) => {
 };
 
 module.exports = {
-  getwishlist,
   addTowishlist,
+  getwishlist,
   deletewishlist,
+ 
 };

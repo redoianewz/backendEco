@@ -4,8 +4,8 @@ const db = pool;
 
 const createOrder = async (req, res) => {
     try {
-        const { userId, subtotal, firstname, lastname, mobile, address, adinformation, city, status, items } = req.body;
-
+        const ip_machine = req.params.id;
+        const { userId, subtotal, firstname, lastname, mobile, address, adinformation, city, status, items } = req.body;        
         // Step 1: Insert order details
         const insertOrderSql = `
             INSERT INTO orders (user_id, subtotal, firstname, lastname, mobile, adress, adinformation, city, status)
@@ -42,7 +42,7 @@ const createOrder = async (req, res) => {
         `;
         const productIds = items.map((item) => item.productId);
 
-        await db.query(deleteShoppingCartItemsSql, [req.ip, productIds]);
+        await db.query(deleteShoppingCartItemsSql, [ip_machine, productIds]);
 
         console.log('Order created successfully');
         res.sendStatus(200);
@@ -54,7 +54,7 @@ const createOrder = async (req, res) => {
 
 const getOrders = async (req, res) => {
     try {
-        const userId = req.params.id;
+        const userId = req.params.userId;
         const sql = `
             SELECT 
                 *                

@@ -4,7 +4,7 @@ const db = pool;
 const getCategories = async (req, res) => {
     try {
         const [rows, fields] = await db.query('SELECT * FROM categories');
-        res.send(rows);
+        res.send(rows); 
     } catch (error) {
         console.error('Error executing query:', error);
         res.status(500).send('Internal Server Error');
