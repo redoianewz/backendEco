@@ -1,16 +1,6 @@
 // Desc: Controller for shopping cart
 const pool = require("../config/dbconnection");
 const db = pool;
-const { v4: uuidv4 } = require("uuid");
-
-// Ensure userId is set in the session
-// Ensure userId and ip_machine are set in the session
-const ensureUserId = (req) => {
-  if (!req.session.userId) {
-    req.session.userId = uuidv4(); // Use the IP address from the request
-  }
-  return req.session.userId;
-};
 
 const addTowishlist = async (req, res) => {
   try {
