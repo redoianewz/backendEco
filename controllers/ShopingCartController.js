@@ -1,13 +1,14 @@
 // Desc: Controller for shopping cart
 const pool = require("../config/dbconnection");
 const db = pool;
+
 const addToShoppingCart = async (req, res) => {
   try {
-    const { productId, quantity, price, productAttributes, uuid } = req.body;
+    const {uuid, productId, quantity, price, productAttributes  } = req.body;
 
     // Ensure uuid i set
     const existingCartSql = `
-      SELECT id FROM shoppingcart WHERE ip_machine = ? LIMIT 1
+      SELECT id FROM shoppingcart WHERE Ip_machine = ? LIMIT 1
     `;
     const [existingCartResult] = await db.query(existingCartSql, [uuid]);
 
@@ -18,7 +19,7 @@ const addToShoppingCart = async (req, res) => {
     } else {
       // If no cart exists, create a new one
       const insertCartSql = `
-        INSERT INTO shoppingcart (ip_machine, constent)
+        INSERT INTO shoppingcart (Ip_machine, constent)
         VALUES (?, ?)
       `;
       const [cartResult] = await db.query(insertCartSql, [uuid, "cart"]);
@@ -161,7 +162,8 @@ const getShoppingCart = async (req, res) => {
       }
     );
     console.log("Result:", result);
-    console.log("Final result:", finalResult);    
+    console.log("Final result:", finalResult);
+
     res.send(finalResult);
   } catch (error) {
     console.error("Error getting shopping cart:", error);

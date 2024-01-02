@@ -23,6 +23,19 @@ app.use("/api/wishlist", require("./Routes/wishlistRoute"));
 app.use("/api/search", require("./Routes/SearchRoute"));
 app.use("/api/shoppingCart", require("./Routes/ShopingCartRoute"));
 app.use("/api/checkout", require("./Routes/Checkout"));
+app.post('/api/addToShoppingCart', async (req, res) => {
+  try {
+    const {uuid} = req.body;         
+      const cartResult = await db.query("INSERT INTO shoppingcart (ip_machine, constent) VALUES (?, ?)", [uuid, "cart"]);          
+
+    res.send("Product added to shopping cart successfully", cartResult);
+  } catch (error) {
+    console.error("Error creating new cart:", error);
+    res.status(500).json({
+      error: "Error creating new cart",
+    });
+  } 
+});
 
 app.listen(port, () => {
   console.log(`Server running at port ${port}`);

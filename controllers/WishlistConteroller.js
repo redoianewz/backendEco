@@ -163,6 +163,7 @@ const getwishlist = async (req, res) => {
     );
     console.log("Result:", result);
     console.log("Final result:", finalResult);
+
     res.send(finalResult);
   } catch (error) {
     console.error("Error getting shopping cart:", error);
@@ -172,35 +173,7 @@ const getwishlist = async (req, res) => {
   }
 };
 
-const updateQuantityInwishlist = async (req, res) => {
-  try {
-    const { itemId, quantity } = req.body;
-    const userId = "8f6d2a05-a5f8-41dc-b6e5-071cb22cc3bb";
 
-    console.log("itemId:", itemId);
-    console.log("quantity:", quantity);
-    console.log("userId:", userId);
-
-    const updateQuantitySql = `
-      UPDATE wishlistitem
-      SET quantity = ?
-      WHERE id = ? AND wishlist_id IN (SELECT id FROM wishlist WHERE ip_machine = ?)
-    `;
-
-    const [result] = await db.query(updateQuantitySql, [
-      quantity,
-      itemId,
-      userId,
-    ]);
-
-    console.log("Result:", result); // Log the result to check if the update was successful
-
-    res.send("Quantity updated successfully");
-  } catch (error) {
-    console.error("Error updating quantity in shopping cart:", error);
-    res.status(500).send("Error updating quantity in the shopping cart");
-  }
-};
 
 const deletewishlist = async (req, res) => {
   try {
