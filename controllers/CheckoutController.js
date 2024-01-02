@@ -37,7 +37,7 @@ const createOrder = async (req, res) => {
             DELETE shoppingcartitem, shoppingcartitemattributes
             FROM shoppingcartitem
             LEFT JOIN shoppingcartitemattributes ON shoppingcartitem.id = shoppingcartitemattributes.cart_item_id
-            WHERE shoppingcartitem.cart_id IN (SELECT id FROM shoppingcart WHERE ip_machine = ?)
+            WHERE shoppingcartitem.cart_id IN (SELECT id FROM shoppingcart WHERE Ip_machine = ?)
             AND shoppingcartitem.product_id IN (?)
         `;
         const productIds = items.map((item) => item.productId);
@@ -54,7 +54,7 @@ const createOrder = async (req, res) => {
 
 const getOrders = async (req, res) => {
     try {
-        const userId = req.params.userId;
+        const userId = req.params.id;
         const sql = `
             SELECT 
                 *                
