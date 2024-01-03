@@ -25,7 +25,7 @@ const postCategory = async (req, res) => {
 const getCategory = async (req, res) => {
     try {
         const categoryId = req.params.id;
-        const [result] = await db.query('SELECT * FROM categories WHERE id = ?', [categoryId]);
+        const [result] = await db.query('SELECT * from products WHERE id = ?', [categoryId]);
         res.json(result);
     } catch (error) {
         console.error('Error getting category:', error);
