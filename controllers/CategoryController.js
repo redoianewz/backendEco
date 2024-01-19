@@ -25,11 +25,11 @@ const postCategory = async (req, res) => {
 const getCategory = async (req, res) => {
     try {
         const categoryId = req.params.id;
-        const [result] = await db.query('SELECT * FROM PRODUCTS INNER JOIN categories ON products.category_id = categories.id WHERE categories.id = ?', [categoryId]);
+        const [result] = await db.query('SELECT * FROM products INNER JOIN categories ON products.category_id = categories.id WHERE categories.id = ?', [categoryId]);
         res.json(result);
     } catch (error) {
         console.error('Error getting category:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send("Internal Server Error");        
     }
 }
 
